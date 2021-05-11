@@ -7,3 +7,10 @@ stroke="{{ stroke|rgb }}"
 stroke-width="{{ stroke_width }}"
  shape-rendering="geometricPrecision"
 />
+{% if bullet_radius %}
+<circle
+cx="{{ x }}"
+cy="{{ y }}"
+r="{{ bullet_radius }}"
+/>
+{% endif %}

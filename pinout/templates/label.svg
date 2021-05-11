@@ -6,6 +6,18 @@
         class="{{ tag }}" 
     {% endif %}
 >
+    {% if shape == 'polygon' %}
+    <polygon
+    {% if scale.x != scale.y %}
+    points="0, 0 {{ rect.width - polygon.skew }}, 0 {{ rect.width}}, {{ rect.height }} {{ polygon.skew }}, {{ rect.height }}"
+    {% else %}
+    points="{{ polygon.skew }}, 0 {{ rect.width }}, 0 {{ rect.width - polygon.skew }}, {{ rect.height }} 0, {{ rect.height }}"
+    {% endif %}
+    stroke="{{ rect.stroke|rgb }}"
+    stroke-width="{{ rect.stroke_width }}"
+    fill="{{ rect.fill|rgb }}"
+    />
+    {% else %}
     <rect 
     stroke="{{ rect.stroke|rgb }}" 
     stroke-width="{{ rect.stroke_width }}" 
@@ -16,6 +28,8 @@
     width="{{ rect.width }}" 
     height="{{ rect.height }}" 
     rx="{{ rect.rx }}" />
+    {% endif %}
+
     <text
         x="{{ rect.width/2 * scale.x }}"
         y="{{ rect.height/2 * scale.y }}"

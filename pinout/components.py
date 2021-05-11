@@ -182,16 +182,20 @@ class PinLabelSet(Component):
             # Create a leaderline
             leaderline_config = copy.deepcopy(self.config["leaderline"])
             vertical_move = f"V {row_offset.y}" if row_offset.y != 0 else ""
+
             horizontal_move = (
-                f"H {row_offset.x + pitch.x * i * self.scale.x}"
+                f"H {pin_x + row_offset.x + (pitch.x * i * -1 * self.scale.x)}"
                 if row_offset.x != 0
                 else ""
             )
 
-            definition = f"M {pin_x} {pin_y} {vertical_move} {horizontal_move}"
+            definition = f"M 0 0 {vertical_move} {horizontal_move}"
+            leaderline_config["bullet_radius"] = self.config["bullet_radius"]
 
             leaderline = self.add(
                 elem.Path(
+                    x=pin_x,
+                    y=pin_y,
                     definition=definition,
                     config=leaderline_config,
                 )
@@ -205,37 +209,39 @@ class PinLabelSet(Component):
                 label_config = copy.deepcopy(self.config)
                 self.patch_config(label_config, label.get("config", {}))
                 # Patch config with tag styles
-                tag_color = Component.config["tags"][label["tag"]]["color"]
+                tag_bg_color = Component.config["tags"][label["tag"]]["bg_color"]
+                tag_fg_color = Component.config["tags"][label["tag"]]["fg_color"]
                 self.patch_config(
                     label_config,
                     {
-                        "label": {"rect": {"fill": tag_color}},
-                        "leaderline": {"stroke": tag_color},
+                        "label": {"rect": {"fill": tag_bg_color}, "text":{"fill": tag_fg_color}},
+                        "leaderline": {"stroke": tag_bg_color},
                     },
                 )
 
                 # Match leaderline to first label tag color
-                if j == 0:
+                if j == 0 and not leaderline.config["force_color"]:
                     leaderline.config["stroke"] = tag_color
 
                 # add label's leaderline
-                label_offset = Coords(*label_config["offset"])
-                self.patch_config(
-                    label_config,
-                    {"leaderline": {"stroke": tag_color}},
-                )
-                definition = f"M {row.width} 0 h {label_offset.x}"
-                row.add(
-                    elem.Path(
-                        x=row.width,
-                        y=0,
-                        width=label_offset.x,
-                        height=self.config["leaderline"]["stroke_width"],
-                        scale=self.scale,
-                        definition=definition,
-                        config=label_config["leaderline"],
+                if self.config["leaderlines_between"]:
+                    label_offset = Coords(*label_config["offset"])
+                    self.patch_config(
+                        label_config,
+                        {"leaderline": {"stroke": tag_color}},
                     )
-                )
+                    definition = f"M {row.width} 0 h {label_offset.x}"
+                    row.add(
+                        elem.Path(
+                            x=row.width,
+                            y=0,
+                            width=label_offset.x,
+                            height=self.config["leaderline"]["stroke_width"],
+                            scale=self.scale,
+                            definition=definition,
+                            config=label_config["leaderline"],
+                        )
+                    )
 
                 row.add(
                     elem.Label(
@@ -262,7 +268,8 @@ class Legend(Component):
         # NOTE: pad.y sets the text **baseline**
         pad = Coords(*self.config["padding"])
         row_height = self.config["row_height"]
-        swatch_size = row_height * 2 / 3
+        swatch_width = row_height * 2 / 1.2
+        swatch_height = row_height * 2 / 3
         categories = categories or Component.config["tags"].keys()
         for i, tag in enumerate(categories):
             entry = self.add(
@@ -271,8 +278,8 @@ class Legend(Component):
             entry.add(
                 elem.Text(
                     Component.config["tags"][tag]["title"],
-                    x=swatch_size * 2,
-                    y=0,
+                    x=swatch_width + 10,
+                    y=-4,
                     width=self.config["rect"]["width"],
                     height=row_height,
                     config=self.config["text"],
@@ -281,14 +288,14 @@ class Legend(Component):
 
             # Create icon based on pinlabel config
             pinlabel_config = copy.deepcopy(Component.config["pinlabel"])
-            tag_color = Component.config["tags"][tag]["color"]
+            tag_color = Component.config["tags"][tag]["bg_color"]
             pinlabel_patch = {
-                "offset": (-swatch_size / 2, 0),
+                "offset": (-swatch_width / 2, 0),
                 "label": {
                     "rect": {
                         "fill": tag_color,
-                        "height": swatch_size,
-                        "width": swatch_size,
+                        "height": swatch_height,
+                        "width": swatch_width,
                         "rx": pinlabel_config["label"]["rect"]["rx"],
                     },
                 },
@@ -297,29 +304,29 @@ class Legend(Component):
                 },
             }
             self.patch_config(pinlabel_config, pinlabel_patch)
-
+            
             entry.add(
-                elem.Rect(
-                    x=0,
-                    y=-pinlabel_config["label"]["rect"]["height"] / 2
-                    - self.config["text"]["size"] / 2,
-                    width=swatch_size,
-                    height=swatch_size,
-                    config=pinlabel_config["label"]["rect"],
-                )
-            )
+                elem.Label(
+                        text_content="",
+                        x=0,
+                        y=-pinlabel_config["label"]["rect"]["height"] / 2
+                        - self.config["text"]["size"] / 2,
+                        width=swatch_width,
+                        height=swatch_height,
+                        config=pinlabel_config["label"],
+            ))
 
-            definition = f"M {swatch_size} {-pinlabel_config['label']['text']['size'] / 2} h {swatch_size/2}"
-            entry.add(
-                elem.Path(
-                    definition=definition,
-                    x=swatch_size,
-                    y=-pinlabel_config["label"]["text"]["size"] / 2,
-                    width=swatch_size / 2,
-                    height=pinlabel_config["leaderline"]["stroke_width"],
-                    config=pinlabel_config["leaderline"],
-                )
-            )
+            #definition = f"M {swatch_size} {-pinlabel_config['label']['text']['size'] / 2} h {swatch_size/2}"
+            #entry.add(
+            #    elem.Path(
+            #        definition=definition,
+            #        x=swatch_size,
+            #        y=-pinlabel_config["label"]["text"]["size"] / 2,
+            #        width=swatch_size / 2,
+            #        height=pinlabel_config["leaderline"]["stroke_width"],
+            #        config=pinlabel_config["leaderline"],
+            #    )
+            #)
 
         # Add an panel *behind* component
         self.config["rect"]["height"] = (

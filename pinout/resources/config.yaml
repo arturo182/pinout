@@ -60,8 +60,10 @@ legend:
 
 pinlabel:
   offset: [8,0]
+  bullet_radius: 0
   tag: pl
   label:
+    shape: rect
     text:
       fill: [255,255,255]
       family: Verdana, Geneva, sans-serif
@@ -74,7 +76,10 @@ pinlabel:
       stroke: [204, 204, 204]
       stroke_width: 0
       width: 50
+    polygon:
+      skew: 8
   leaderline:
+    force_color: false
     stroke: [204, 204, 204]
     stroke_width: 1
     tag: ll

@@ -243,7 +243,7 @@ class Path(Element):
         self.definition = definition
 
     def render(self):
-        return svg_path.render(d=self.definition, scale=self.scale, **self.config)
+        return svg_path.render(x=self.x, y=self.y, d=self.definition, scale=self.scale, **self.config)
 
 
 class Text(Element):
